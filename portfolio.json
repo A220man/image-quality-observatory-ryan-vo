@@ -1,0 +1,15 @@
+{
+  "name": "image-quality-observatory-ryan-vo",
+  "owner": "A220man",
+  "email": "ryandtvo@gmail.com",
+  "version": "1.0.0",
+  "description": "Measure image quality, group failures and calibrate review thresholds from human labels.",
+  "workflows": [
+    "Measure and review uploaded image datasets",
+    "Group failures and metric clusters",
+    "Calibrate thresholds and benchmark held-out synthetic scenes",
+    "Explain aggregate measurements with optional LLM advice"
+  ],
+  "domain": "computer-vision",
+  "summary": "Image dataset quality measurement, review, clustering and calibration"
+}
