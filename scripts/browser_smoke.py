@@ -1,0 +1,40 @@
+import io,json,os
+from pathlib import Path
+from PIL import Image
+from playwright.sync_api import sync_playwright
+out=Path(os.environ.get('QA_ARTIFACTS', 'browser-artifacts'));out.mkdir(parents=True,exist_ok=True)
+b=io.BytesIO();Image.new('RGB',(64,64),(90,100,110)).save(b,format='PNG')
+with sync_playwright() as p:
+ browser=p.chromium.launch(executable_path=os.environ.get('CHROME_BIN'),headless=True,args=['--no-sandbox'])
+ page=browser.new_page(viewport={'width':1280,'height':900})
+ errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+ page.goto(os.environ.get('APP_URL', 'http://127.0.0.1:5173'))
+ page.get_by_role('button',name='Enter local workspace').click()
+ page.get_by_role('heading',name='Image review queue').wait_for()
+ page.locator('input[type=file]').set_input_files({'name':'qa-image.png','mimeType':'image/png','buffer':b.getvalue()})
+ page.get_by_role('button',name='Measure & import').click()
+ page.get_by_text('qa-image.png',exact=True).wait_for()
+ page.get_by_label('Label qa-image.png').select_option('bad')
+ page.wait_for_function("!document.querySelector('.working')")
+ page.get_by_role('button',name='Analysis',exact=True).click()
+ page.get_by_role('heading',name='Failure signatures').wait_for()
+ page.get_by_role('button',name='Explain measurements').click()
+ page.get_by_role('heading',name='Local summary').wait_for()
+ page.get_by_role('button',name='Policy',exact=True).click()
+ page.get_by_label('Minimum sharpness').fill('120')
+ page.on('dialog',lambda d:d.accept())
+ page.get_by_role('button',name='Save policy').click()
+ page.get_by_text('Policy saved; all images re-evaluated.').wait_for()
+ page.get_by_role('button',name='Audit',exact=True).click()
+ page.get_by_text('image.label',exact=False).wait_for()
+ page.get_by_role('button',name='Review',exact=True).click()
+ page.screenshot(path=str(out/'desktop.png'),full_page=True)
+ page.set_viewport_size({'width':390,'height':844})
+ assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Mobile page overflow'
+ page.screenshot(path=str(out/'mobile.png'),full_page=True)
+ page.get_by_role('button',name='Sign out').click()
+ page.get_by_role('button',name='Enter local workspace').wait_for()
+ assert not errors,errors
+ (out/'result.json').write_text(json.dumps({'status':'passed','flows':['demo login','upload','label','analysis','local advice','policy update','audit','mobile layout','logout'],'console_errors':errors},indent=2))
+ print((out/'result.json').read_text())
+ browser.close()

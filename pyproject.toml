@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "image-quality-observatory-ryan-vo"
+version = "1.0.0"
+description = "Image dataset quality measurement, review and calibration"
+requires-python = ">=3.12"
+authors = [{name = "Ryan Vo", email = "ryandtvo@gmail.com"}]
+license = "MIT"
+dynamic = ["dependencies"]
+[tool.setuptools.dynamic]
+dependencies = {file = ["backend/requirements.txt"]}
+[tool.setuptools.packages.find]
+where = ["backend"]
+include = ["app*"]
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]
