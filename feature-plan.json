@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "current_feature": "quality-distribution-profiling",
+  "features": [
+    {
+      "id": "dataset-ingestion-measurement",
+      "title": "Image dataset ingestion, quality measurement and catalog review",
+      "status": "done",
+      "acceptance": [
+        "Ingest images in memory and calculate blur, exposure, and contrast metrics without storing raw files.",
+        "Persist quality records in SQLite with duplicate hash detection and batch isolation.",
+        "Provide paginated review table with sorting and filtering by batch and decision."
+      ],
+      "implementation": [
+        "backend/app/services/metrics.py",
+        "backend/app/services/catalog.py",
+        "backend/app/api/routes.py"
+      ],
+      "tests": [
+        "backend/tests/test_catalog.py",
+        "backend/tests/test_api.py"
+      ]
+    },
+    {
+      "id": "failure-grouping-clustering",
+      "title": "Failure signature grouping and metric clustering",
+      "status": "done",
+      "acceptance": [
+        "Group images by identical failure check signatures.",
+        "Cluster standardized metric vectors using deterministic k-means with dominant failure identification."
+      ],
+      "implementation": [
+        "backend/app/services/grouping.py",
+        "backend/app/api/routes.py"
+      ],
+      "tests": [
+        "backend/tests/test_api.py"
+      ]
+    },
+    {
+      "id": "policy-calibration-benchmark",
+      "title": "Human label policy calibration and synthetic benchmark suite",
+      "status": "done",
+      "acceptance": [
+        "Fit suggested quality policy thresholds from human good/bad feedback labels.",
+        "Evaluate training-set confusion matrix, precision, recall, and F1 score.",
+        "Generate synthetic benchmark scenes and evaluate quality detection accuracy."
+      ],
+      "implementation": [
+        "backend/app/services/calibration.py",
+        "backend/app/services/benchmark.py",
+        "backend/app/services/synthetic.py"
+      ],
+      "tests": [
+        "backend/tests/test_api.py"
+      ]
+    },
+    {
+      "id": "advisory-llm-explanations",
+      "title": "Aggregate-only advisory explanations with multi-provider LLM support",
+      "status": "done",
+      "acceptance": [
+        "Generate aggregate-only quality explanations without sending image bytes or identifiers.",
+        "Support OpenAI, Anthropic, Gemini, and Ollama provider endpoints with local offline fallback."
+      ],
+      "implementation": [
+        "backend/app/services/advisory.py"
+      ],
+      "tests": [
+        "backend/tests/test_advisory.py"
+      ]
+    },
+    {
+      "id": "decisions-csv-export",
+      "title": "Decision CSV export with spreadsheet formula neutralization",
+      "status": "done",
+      "acceptance": [
+        "Export batch quality decisions and measurements to CSV format.",
+        "Neutralize spreadsheet formula injection by prefixing special characters."
+      ],
+      "implementation": [
+        "backend/app/services/export.py"
+      ],
+      "tests": [
+        "backend/tests/test_export.py"
+      ]
+    },
+    {
+      "id": "oidc-session-auth",
+      "title": "OIDC Keycloak authentication with PKCE, session management and demo mode",
+      "status": "done",
+      "acceptance": [
+        "Provide OIDC authorization-code flow with PKCE and session cookie management.",
+        "Enforce CSRF token protection on mutating requests and role-based permissions.",
+        "Offer local development demo mode that is refused in production environments."
+      ],
+      "implementation": [
+        "backend/app/core/auth.py"
+      ],
+      "tests": [
+        "backend/tests/test_oidc.py"
+      ]
+    },
+    {
+      "id": "quality-distribution-profiling",
+      "title": "Dataset quality distribution percentiles and health profiling",
+      "status": "done",
+      "acceptance": [
+        "Compute statistical percentiles (p10, p25, p50, p75, p90) and dispersion for all image quality metrics.",
+        "Calculate batch pass/review/reject breakdown and human label agreement rate.",
+        "Expose GET /api/analysis/distribution endpoint and display quality distribution cards in the Analysis tab."
+      ],
+      "implementation": [
+        "backend/app/services/distribution.py",
+        "backend/app/api/routes.py",
+        "frontend/src/App.tsx",
+        "frontend/src/api.ts"
+      ],
+      "tests": [
+        "backend/tests/test_distribution.py",
+        "frontend/src/api.test.ts"
+      ]
+    },
+    {
+      "id": "dataset-drift-comparison",
+      "title": "Comparative batch quality drift and Kolmogorov-Smirnov statistical tests",
+      "status": "planned",
+      "acceptance": [
+        "Compare two dataset batches or time windows to detect distribution drift in blur, exposure, or contrast.",
+        "Compute two-sample Kolmogorov-Smirnov p-values for quality distributions."
+      ]
+    },
+    {
+      "id": "automated-quarantine-webhook",
+      "title": "Automated webhook notifications for high rejection rate batches",
+      "status": "planned",
+      "acceptance": [
+        "Dispatch signed HMAC webhooks when batch quality rejection rate exceeds configured thresholds.",
+        "Allow operators to configure quarantine thresholds per dataset category."
+      ]
+    }
+  ]
+}

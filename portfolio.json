@@ -1,4 +1,5 @@
 {
+  "schema_version": 1,
   "name": "image-quality-observatory-ryan-vo",
   "owner": "A220man",
   "email": "ryandtvo@gmail.com",
@@ -7,9 +8,18 @@
   "workflows": [
     "Measure and review uploaded image datasets",
     "Group failures and metric clusters",
+    "Analyze dataset quality distributions and percentiles",
     "Calibrate thresholds and benchmark held-out synthetic scenes",
     "Explain aggregate measurements with optional LLM advice"
   ],
   "domain": "computer-vision",
-  "summary": "Image dataset quality measurement, review, clustering and calibration"
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "summary": "Work in progress: image-quality-observatory-ryan-vo",
+  "status": "work-in-progress"
 }
