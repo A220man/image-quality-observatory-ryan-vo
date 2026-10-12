@@ -26,3 +26,12 @@ it('handles reverse proxy HTML errors without leaking the body',async()=>{
  vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response('<h1>internal host</h1>',{status:502})));
  await expect(api('/images')).rejects.toEqual(new ApiError(502,'Request failed (502)'));
 });
+it('fetches dataset quality distribution with query params',async()=>{
+ const distPayload={total_images:2,health_status:'healthy',decisions:{accept_count:2,accept_rate:1,review_count:0,review_rate:0,reject_count:0,reject_rate:0},labels:{total_labeled:0,good_count:0,bad_count:0,unlabeled_count:2,concordant_count:0,discordant_count:0,review_count:0,agreement_rate:null},metrics:{},top_failures:[]};
+ const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify(distPayload)));
+ vi.stubGlobal('fetch',fetcher);
+ const res=await api('/analysis/distribution?batch=test');
+ expect(res).toEqual(distPayload);
+ expect(fetcher.mock.calls[0][0]).toBe('/api/analysis/distribution?batch=test');
+});
+

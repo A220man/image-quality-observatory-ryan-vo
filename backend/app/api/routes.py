@@ -10,6 +10,7 @@ from app.services.metrics import ImageDecodeError, ImageMetrics
 from app.services.policy import Policy
 from app.services.calibration import calibrate, evaluate_policy
 from app.services.grouping import cluster_rows, signature_groups
+from app.services.distribution import compute_distribution
 from app.services.benchmark import run_benchmark
 from app.services.catalog import METRICS
 from app.services.advisory import explain
@@ -123,6 +124,12 @@ def groups(request: Request, batch: str | None = None):
 def clusters(request: Request, batch: str | None = None, k: int = Query(3, ge=1, le=12)):
     authorize(request)
     return asdict(cluster_rows(analytics(request, batch), k))
+
+
+@router.get('/analysis/distribution')
+def distribution(request: Request, batch: str | None = None):
+    authorize(request)
+    return compute_distribution(analytics(request, batch)).as_dict()
 
 
 @router.post('/analysis/calibrate')

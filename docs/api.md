@@ -20,6 +20,7 @@ Responses are JSON except CSV export and empty successful delete/logout response
 | PUT | `/api/policy` | Admin | Save policy and atomically re-evaluate all images |
 | GET | `/api/analysis/groups` | Viewer | Exact failure signatures; optional `batch` |
 | GET | `/api/analysis/clusters` | Viewer | Metric clusters; optional `batch`, `k` (1–12) |
+| GET | `/api/analysis/distribution` | Viewer | Statistical percentiles, decisions breakdown and health status; optional `batch` |
 | POST | `/api/analysis/calibrate` | Reviewer | Suggest policy from ≥4 labeled images with both classes |
 | POST | `/api/analysis/benchmark` | Reviewer | Synthetic benchmark; `scenes` (4–24), `seed` |
 | POST | `/api/analysis/advice` | Reviewer | Optional aggregate-only advice; optional `batch` |
