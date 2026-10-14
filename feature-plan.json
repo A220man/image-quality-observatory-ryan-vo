@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "quality-distribution-profiling",
+"current_feature": "automated-quarantine-webhook",
   "features": [
     {
       "id": "dataset-ingestion-measurement",
@@ -124,10 +124,19 @@
     {
       "id": "dataset-drift-comparison",
       "title": "Comparative batch quality drift and Kolmogorov-Smirnov statistical tests",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "Compare two dataset batches or time windows to detect distribution drift in blur, exposure, or contrast.",
         "Compute two-sample Kolmogorov-Smirnov p-values for quality distributions."
+      ],
+      "implementation": [
+        "backend/app/services/drift.py",
+        "backend/app/api/routes.py",
+        "frontend/src/App.tsx",
+        "frontend/src/api.ts"
+      ],
+      "tests": [
+        "backend/tests/test_drift.py"
       ]
     },
     {

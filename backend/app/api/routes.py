@@ -11,6 +11,7 @@ from app.services.policy import Policy
 from app.services.calibration import calibrate, evaluate_policy
 from app.services.grouping import cluster_rows, signature_groups
 from app.services.distribution import compute_distribution
+from app.services.drift import compare_batches
 from app.services.benchmark import run_benchmark
 from app.services.catalog import METRICS
 from app.services.advisory import explain
@@ -130,6 +131,12 @@ def clusters(request: Request, batch: str | None = None, k: int = Query(3, ge=1,
 def distribution(request: Request, batch: str | None = None):
     authorize(request)
     return compute_distribution(analytics(request, batch)).as_dict()
+@router.get('/analysis/drift')
+def drift(request: Request, batch_a: str = Query(...), batch_b: str = Query(...), alpha: float = Query(0.05, gt=0, le=1)):
+    authorize(request)
+    rows_a = analytics(request, batch_a)
+    rows_b = analytics(request, batch_b)
+    return compare_batches(rows_a, rows_b, batch_a, batch_b, alpha).as_dict()
 
 
 @router.post('/analysis/calibrate')

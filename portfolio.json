@@ -9,6 +9,7 @@
     "Measure and review uploaded image datasets",
     "Group failures and metric clusters",
     "Analyze dataset quality distributions and percentiles",
+    "Compare batch quality distributions for drift detection",
     "Calibrate thresholds and benchmark held-out synthetic scenes",
     "Explain aggregate measurements with optional LLM advice"
   ],

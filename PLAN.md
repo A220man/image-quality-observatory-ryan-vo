@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-quality-distribution-profiling
+automated-quarantine-webhook
 
 ## Roadmap
 
@@ -98,11 +98,15 @@ Tests: `backend/tests/test_distribution.py`, `frontend/src/api.test.ts`
 
 ### dataset-drift-comparison — Comparative batch quality drift and Kolmogorov-Smirnov statistical tests
 
-Status: planned
+Status: done
 
 Acceptance:
 - Compare two dataset batches or time windows to detect distribution drift in blur, exposure, or contrast.
 - Compute two-sample Kolmogorov-Smirnov p-values for quality distributions.
+
+Implementation: `backend/app/services/drift.py`, `backend/app/api/routes.py`, `frontend/src/App.tsx`, `frontend/src/api.ts`
+
+Tests: `backend/tests/test_drift.py`
 
 ### automated-quarantine-webhook — Automated webhook notifications for high rejection rate batches
 
