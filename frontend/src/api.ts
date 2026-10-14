@@ -20,3 +20,5 @@ export type DecisionBreakdown={accept_count:number;accept_rate:number;review_cou
 export type LabelAlignment={total_labeled:number;good_count:number;bad_count:number;unlabeled_count:number;concordant_count:number;discordant_count:number;review_count:number;agreement_rate:number|null};
 export type FailureFrequency={check:string;count:number;frequency:number};
 export type DatasetDistribution={total_images:number;decisions:DecisionBreakdown;labels:LabelAlignment;metrics:Record<string,MetricStats>;top_failures:FailureFrequency[];health_status:'healthy'|'degraded'|'critical'|'empty'};
+export type KSResult={metric:string;statistic:number;p_value:number;sample_a_count:number;sample_b_count:number;drift_detected:boolean};
+export type DriftComparison={batch_a:string;batch_b:string;total_a:number;total_b:number;ks_results:KSResult[];overall_drift:boolean};

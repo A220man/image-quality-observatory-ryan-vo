@@ -12,11 +12,11 @@ A review workspace for computer-vision datasets. Measure blur, exposure and cont
 - Import a batch of images, inspect measured quality and label good/bad examples. Duplicate content within the same batch is idempotent.
 - Explore exact failure signatures and deterministic clusters of standardized quality measurements.
 - Profile dataset quality distributions, percentiles (p10, p25, p50, p75, p90), pass/reject rates, and human label alignment.
+- Compare quality distributions between dataset batches using two-sample Kolmogorov-Smirnov tests to detect drift.
 - Fit a suggested policy from human labels, compare its training-set confusion matrix, and explicitly apply thresholds as an administrator.
 - Run a reproducible synthetic benchmark with separate training and evaluation scenes.
 - Export batch decisions as CSV, with spreadsheet formula neutralization.
 - Request optional advisory explanations using only aggregate measurements. Core analysis works without an LLM.
-
 ## Architecture
 
 ```mermaid
@@ -29,12 +29,12 @@ flowchart LR
   API --> Catalog[Transactional catalog / audit]
   Catalog --> DB[(SQLite)]
   API --> Metrics[Pillow + NumPy quality metrics]
-  API --> Analysis[Groups / clusters / distributions / calibration / benchmark]
+  API --> Analysis[Groups / clusters / distributions / drift / calibration / benchmark]
   API --> Advice[Aggregate-only advisory adapter]
   Advice --> Provider[Configured LLM endpoint]
 ```
 
-Backend responsibilities are separated into configuration, authentication, storage, HTTP routes, metrics, policy, catalog, grouping, distribution, calibration, benchmark, export and advisory modules. The browser uses HttpOnly session cookies and obtains a session-bound CSRF token for mutations.
+Backend responsibilities are separated into configuration, authentication, storage, HTTP routes, metrics, policy, catalog, grouping, distribution, drift, calibration, benchmark, export and advisory modules. The browser uses HttpOnly session cookies and obtains a session-bound CSRF token for mutations.
 
 ## Local install
 
