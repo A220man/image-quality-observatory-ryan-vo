@@ -11,6 +11,7 @@ from app.core.config import Settings, ensure_db_dir, load_settings, validate_set
 from app.core.db import Database
 from app.core.errors import install_error_handlers
 from app.services.catalog import Catalog
+from app.services.webhook import WebhookManager
 
 
 class BodyTooLarge(HTTPException):
@@ -59,6 +60,7 @@ def create_app(settings: Settings | None = None, oidc_transport: httpx.BaseTrans
         db = Database(settings.database_path)
         app.state.db = db
         app.state.catalog = Catalog(db)
+        app.state.webhook_manager = WebhookManager(db)
         app.state.oidc = OIDCClient(settings, transport=oidc_transport)
         try:yield
         finally:db.close()

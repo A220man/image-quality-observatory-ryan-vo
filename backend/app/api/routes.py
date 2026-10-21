@@ -1,5 +1,7 @@
 """Authenticated image-quality workflows exposed as a documented JSON API."""
 from dataclasses import asdict
+import uuid
+import time
 from typing import Literal
 from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 from fastapi.responses import Response
@@ -14,7 +16,7 @@ from app.services.distribution import compute_distribution
 from app.services.drift import compare_batches
 from app.services.benchmark import run_benchmark
 from app.services.catalog import METRICS
-from app.services.advisory import explain
+from app.services.webhook import WebhookConfig, WebhookManager, QuarantineEvent, compute_batch_rejection_rate
 from app.services.export import decisions_csv
 
 router = APIRouter(prefix='/api', tags=['Image quality'])
@@ -38,7 +40,27 @@ class PolicyInput(BaseModel):
 class LabelInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
     label: Literal['good', 'bad'] | None
+class WebhookConfigInput(BaseModel):
+    model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
+    url: str = Field(..., min_length=1, max_length=2048)
+    secret: str = Field(..., min_length=16, max_length=256)
+    categories: dict[str, float] = Field(default_factory=dict)  # category -> threshold (0-1)
+    enabled: bool = True
 
+    @model_validator(mode='after')
+    def validate_categories(self):
+        for cat, threshold in self.categories.items():
+            if not isinstance(cat, str) or not cat:
+                raise ValueError('Category names must be non-empty strings')
+            if not isinstance(threshold, (int, float)) or not (0 <= threshold <= 1):
+                raise ValueError('Thresholds must be floats in [0, 1]')
+        return self
+
+
+class WebhookTestInput(BaseModel):
+    model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
+    batch: str
+    category: str = 'default'
 
 def analytics(request: Request, batch: str | None) -> list[dict]:
     catalog = request.app.state.catalog
@@ -170,3 +192,130 @@ def audit(request: Request, limit: int = Query(100, ge=1, le=500)):
 def advice(request: Request, batch: str | None = None):
     authorize(request, 'reviewer')
     return explain(request.app.state.settings, analytics(request, batch))
+
+
+@router.post('/webhooks')
+def create_webhook(request: Request, body: WebhookConfigInput):
+    user = authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    config = WebhookConfig(
+        id=str(uuid.uuid4()),
+        url=body.url,
+        secret=body.secret,
+        categories=body.categories,
+        enabled=body.enabled,
+    )
+    webhook_manager.add_config(config)
+    return config.as_dict()
+
+
+@router.get('/webhooks')
+def list_webhooks(request: Request):
+    authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    return {'webhooks': [c.as_dict() for c in webhook_manager.list_configs()]}
+
+
+@router.get('/webhooks/{webhook_id}')
+def get_webhook(request: Request, webhook_id: str):
+    authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    config = webhook_manager.get_config(webhook_id)
+    if not config:
+        raise AppError(404, 'not_found', 'Webhook not found')
+    return config.as_dict()
+
+
+@router.patch('/webhooks/{webhook_id}')
+def update_webhook(request: Request, webhook_id: str, body: WebhookConfigInput):
+    user = authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    existing = webhook_manager.get_config(webhook_id)
+    if not existing:
+        raise AppError(404, 'not_found', 'Webhook not found')
+    config = WebhookConfig(
+        id=webhook_id,
+        url=body.url,
+        secret=body.secret,
+        categories=body.categories,
+        enabled=body.enabled,
+        created_at=existing.created_at,
+    )
+    webhook_manager.add_config(config)
+    return config.as_dict()
+
+
+@router.delete('/webhooks/{webhook_id}', status_code=204)
+def delete_webhook(request: Request, webhook_id: str):
+    user = authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    deleted = webhook_manager.delete_config(webhook_id)
+    if not deleted:
+        raise AppError(404, 'not_found', 'Webhook not found')
+
+
+@router.post('/webhooks/{webhook_id}/test')
+def test_webhook(request: Request, webhook_id: str, body: WebhookTestInput):
+    user = authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    config = webhook_manager.get_config(webhook_id)
+    if not config:
+        raise AppError(404, 'not_found', 'Webhook not found')
+
+    # Compute rejection rate for the batch
+    total, rejected, rate = compute_batch_rejection_rate(request.app.state.catalog, body.batch)
+    if total == 0:
+        raise AppError(422, 'empty_batch', 'Batch has no images')
+
+    threshold = config.threshold_for(body.category)
+    if threshold is None:
+        raise AppError(422, 'no_threshold', f'No threshold configured for category {body.category}')
+
+    event = QuarantineEvent(
+        event_id=str(uuid.uuid4()),
+        timestamp=time.time(),
+        batch=body.batch,
+        category=body.category,
+        total_images=total,
+        rejected_count=rejected,
+        rejection_rate=rate,
+        threshold=threshold,
+        triggered=rate > threshold,
+    )
+
+    import asyncio
+    delivery_result = asyncio.run(webhook_manager.dispatch(config, event))
+    webhook_manager._record_delivery(config.id, event.event_id, event.as_dict(), *delivery_result)
+
+    return {
+        'event': event.as_dict(),
+        'delivery': {
+            'status_code': delivery_result[0],
+            'response_body': delivery_result[1],
+            'error': delivery_result[2],
+        },
+    }
+
+
+@router.post('/webhooks/check/{batch}')
+def check_quarantine(request: Request, batch: str, category: str = Query('default')):
+    """Check and dispatch quarantine webhooks for a batch."""
+    authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    results = webhook_manager.check_and_dispatch(request.app.state.catalog, batch, category)
+    return {
+        'batch': batch,
+        'category': category,
+        'triggered': [
+            {
+                'config': config.as_dict(),
+                'event': event.as_dict(),
+                'delivery': {
+                    'status_code': delivery[0],
+                    'response_body': delivery[1],
+                    'error': delivery[2],
+                },
+            }
+            for config, event, delivery in results
+        ],
+    }

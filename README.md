@@ -3,7 +3,7 @@
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
 
-Current version: `1.0.0`.
+Current version: `1.3.0`.
 
 A review workspace for computer-vision datasets. Measure blur, exposure and contrast; find recurring failure patterns; label examples; calibrate quality thresholds; and export filtering decisions. Image bytes are decoded in memory and are not retained. SQLite stores metrics, filenames, labels, sessions and audit history.
 
@@ -17,6 +17,7 @@ A review workspace for computer-vision datasets. Measure blur, exposure and cont
 - Run a reproducible synthetic benchmark with separate training and evaluation scenes.
 - Export batch decisions as CSV, with spreadsheet formula neutralization.
 - Request optional advisory explanations using only aggregate measurements. Core analysis works without an LLM.
+- Configure automated quarantine webhooks that dispatch signed HMAC notifications when batch rejection rates exceed category-specific thresholds.
 ## Architecture
 
 ```mermaid
