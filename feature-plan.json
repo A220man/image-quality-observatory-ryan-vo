@@ -142,10 +142,18 @@
     {
       "id": "automated-quarantine-webhook",
       "title": "Automated webhook notifications for high rejection rate batches",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "Dispatch signed HMAC webhooks when batch quality rejection rate exceeds configured thresholds.",
         "Allow operators to configure quarantine thresholds per dataset category."
+      ],
+      "implementation": [
+        "backend/app/services/webhook.py",
+        "backend/app/api/routes.py",
+        "backend/app/main.py"
+      ],
+      "tests": [
+        "backend/tests/test_webhook.py"
       ]
     }
   ]

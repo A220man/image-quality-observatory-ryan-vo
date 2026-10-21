@@ -110,9 +110,13 @@ Tests: `backend/tests/test_drift.py`
 
 ### automated-quarantine-webhook — Automated webhook notifications for high rejection rate batches
 
-Status: planned
+Status: done
 
 Acceptance:
 - Dispatch signed HMAC webhooks when batch quality rejection rate exceeds configured thresholds.
 - Allow operators to configure quarantine thresholds per dataset category.
+
+Implementation: `backend/app/services/webhook.py`, `backend/app/api/routes.py`, `backend/app/main.py`
+
+Tests: `backend/tests/test_webhook.py`
 
