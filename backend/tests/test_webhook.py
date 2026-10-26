@@ -9,6 +9,7 @@ from fastapi import Response
 
 from app.core.config import Settings
 from app.core.auth import COOKIE, create_session, digest
+from app.core.db import Database
 from app.main import create_app
 from app.services.webhook import (
     WebhookConfig,
