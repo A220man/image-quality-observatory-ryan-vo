@@ -4,11 +4,12 @@ Dispatches signed HMAC webhooks when batch quality rejection rate
 exceeds configured thresholds per dataset category.
 """
 from __future__ import annotations
-
+import asyncio
 import hmac
 import json
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
@@ -61,6 +62,7 @@ class WebhookManager:
 
     def __init__(self, db: Database):
         self.db = db
+        self._executor = ThreadPoolExecutor(max_workers=4)
         self._init_db()
 
     def _init_db(self) -> None:
@@ -244,18 +246,9 @@ class WebhookManager:
                 triggered=True,
             )
 
-            # Dispatch synchronously for now (could be async in background)
-            import asyncio
-            try:
-                delivery_result = asyncio.run(self.dispatch(config, event))
-            except RuntimeError:
-                # If already in event loop, create task
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # Can't await here, record as pending
-                    delivery_result = (None, None, 'Async dispatch required')
-                else:
-                    delivery_result = loop.run_until_complete(self.dispatch(config, event))
+            # Dispatch using thread pool to avoid event loop conflicts
+            future = self._executor.submit(asyncio.run, self.dispatch(config, event))
+            delivery_result = future.result(timeout=30.0)
 
             self._record_delivery(config.id, event.event_id, event.as_dict(), *delivery_result)
             results.append((config, event, delivery_result))

@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: image-quality-observatory-ryan-vo
+Version: 1.0.0
+Summary: Image dataset quality measurement, review and calibration
+Author-email: Ryan Vo <ryandtvo@gmail.com>
+License-Expression: MIT
+Requires-Python: >=3.12
+License-File: LICENSE
+Requires-Dist: fastapi==0.115.12
+Requires-Dist: uvicorn==0.34.2
+Requires-Dist: python-multipart==0.0.20
+Requires-Dist: httpx==0.28.1
+Requires-Dist: PyJWT[crypto]==2.10.1
+Requires-Dist: numpy==2.2.5
+Requires-Dist: Pillow==11.2.1
+Requires-Dist: pytest==8.3.5
+Dynamic: license-file

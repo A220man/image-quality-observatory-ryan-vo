@@ -17,3 +17,4 @@ test-results/
 .portfolio-*.json
 
 browser-artifacts/
+venv/

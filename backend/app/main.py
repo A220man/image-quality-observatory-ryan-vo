@@ -62,8 +62,11 @@ def create_app(settings: Settings | None = None, oidc_transport: httpx.BaseTrans
         app.state.catalog = Catalog(db)
         app.state.webhook_manager = WebhookManager(db)
         app.state.oidc = OIDCClient(settings, transport=oidc_transport)
-        try:yield
-        finally:db.close()
+        try:
+            yield
+        finally:
+            app.state.webhook_manager._executor.shutdown(wait=True)
+            db.close()
 
     app = FastAPI(title='Image Quality Observatory', version='1.0.0', lifespan=lifespan)
     app.state.settings = settings
