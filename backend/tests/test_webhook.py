@@ -50,20 +50,24 @@ def test_webhook_config_crud_requires_admin(client):
     """Webhook config endpoints require admin role."""
     login(client)
     # viewer cannot access
-    from fastapi import Response as FastAPIResponse
-    response = FastAPIResponse()
-    user = create_session(client.app.state.db, client.app.state.settings, response, 'viewer', 'Viewer', ['viewer'])
-    # Extract cookie from response
-    cookie_header = response.headers.get('set-cookie', '')
-    if cookie_header:
-        cookie_value = cookie_header.split(';')[0].split('=')[1]
-        client.cookies[COOKIE] = cookie_value
-    else:
-        # Fallback: manually set cookie from session
-        client.cookies[COOKIE] = list(client.app.state.db.query('SELECT id FROM sessions WHERE subject=?', ('viewer',)))[0]['id']
-    # Need to set CSRF token for the new session
-    csrf_token = list(client.app.state.db.query('SELECT csrf_token FROM sessions WHERE subject=?', ('viewer',)))[0]['csrf_token']
-    client.headers['X-CSRF-Token'] = csrf_token
+    from datetime import datetime, timezone, timedelta
+    from app.core.auth import COOKIE, digest
+    import secrets
+    import json
+    
+    # Create viewer session directly with known token
+    token = secrets.token_urlsafe(32)
+    csrf = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
+    settings = client.app.state.settings
+    with client.app.state.db.transaction() as conn:
+        conn.execute('DELETE FROM sessions WHERE expires_at <= ?', (now.isoformat(),))
+        conn.execute('INSERT INTO sessions VALUES(?,?,?,?,?,?,?)',
+                     (digest(token), 'viewer', 'Viewer', json.dumps(['viewer']), csrf,
+                      (now + timedelta(seconds=settings.session_ttl_seconds)).isoformat(), now.isoformat()))
+    client.cookies.clear()
+    client.cookies[COOKIE] = token
+    client.headers['X-CSRF-Token'] = csrf
     assert client.post('/api/webhooks', json={'url': 'http://example.com', 'secret': 'a' * 16}).status_code == 403
     assert client.get('/api/webhooks').status_code == 403
 
