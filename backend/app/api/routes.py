@@ -5,7 +5,7 @@ import time
 from typing import Literal
 from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 from fastapi.responses import Response
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from app.core.auth import authorize
 from app.core.errors import AppError
 from app.services.metrics import ImageDecodeError, ImageMetrics
@@ -55,6 +55,17 @@ class WebhookConfigInput(BaseModel):
             if not isinstance(threshold, (int, float)) or not (0 <= threshold <= 1):
                 raise ValueError('Thresholds must be floats in [0, 1]')
         return self
+
+    @field_validator('url')
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        from urllib.parse import urlparse
+        parsed = urlparse(v)
+        if not parsed.scheme or not parsed.netloc:
+            raise ValueError('URL must be a valid HTTP/HTTPS URL with scheme and host')
+        if parsed.scheme not in ('http', 'https'):
+            raise ValueError('URL scheme must be http or https')
+        return v
 
 
 class WebhookTestInput(BaseModel):
