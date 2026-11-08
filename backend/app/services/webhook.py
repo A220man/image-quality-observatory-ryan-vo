@@ -165,7 +165,20 @@ class WebhookManager:
             error,
             time.time(),
         ))
-        self.db._conn.commit()
+
+    def list_deliveries(self, webhook_id: str | None = None, limit: int = 100, offset: int = 0) -> list[dict]:
+        """List webhook delivery history, optionally filtered by webhook_id."""
+        if webhook_id:
+            rows = self.db._conn.execute('''
+                SELECT * FROM webhook_deliveries WHERE webhook_id=? ORDER BY created_at DESC LIMIT ? OFFSET ?
+            ''', (webhook_id, limit, offset)).fetchall()
+        else:
+            rows = self.db._conn.execute('''
+                SELECT * FROM webhook_deliveries ORDER BY created_at DESC LIMIT ? OFFSET ?
+            ''', (limit, offset)).fetchall()
+        return [dict(row) for row in rows]
+
+
 
     async def dispatch(
         self,

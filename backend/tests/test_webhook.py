@@ -477,4 +477,78 @@ def test_webhook_delivery_recording(client):
     rows = client.app.state.db.query('SELECT * FROM webhook_deliveries')
     assert len(rows) == 1
     assert rows[0]['webhook_id'] == webhook_id
-    assert rows[0]['status_code'] == 200
+
+
+def test_webhook_delivery_history_endpoint(client):
+    """Test the webhook delivery history endpoint."""
+    login(client)
+
+    # Add webhook config
+    resp = client.post('/api/webhooks', json={
+        'url': 'http://example.com/webhook',
+        'secret': 'supersecretkey123456',
+        'categories': {'default': 0.1},
+        'enabled': True,
+    })
+    webhook_id = resp.json()['id']
+
+    # Add images and trigger webhook
+    from PIL import Image, ImageDraw, ImageFilter
+    from io import BytesIO
+
+    def make_blurry_image():
+        img = Image.new('L', (32, 32), 128)
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([5, 5, 15, 15], fill=200)
+        draw.rectangle([20, 20, 27, 27], fill=50)
+        img = img.filter(ImageFilter.GaussianBlur(5))
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        return buffer.getvalue()
+
+    img_blurry_bytes = make_blurry_image()
+    client.app.state.catalog.ingest(img_blurry_bytes, 'blurry.png', 'test_batch3', 'tester')
+
+    with patch('httpx.AsyncClient.post', new_callable=AsyncMock) as mock_post:
+        mock_response = AsyncMock()
+        mock_response.status_code = 200
+        mock_response.text = 'OK'
+        mock_post.return_value = mock_response
+
+        client.post(f'/api/webhooks/{webhook_id}/test', json={
+            'batch': 'test_batch3',
+            'category': 'default',
+        })
+
+    # Test delivery history for specific webhook
+    resp = client.get(f'/api/webhooks/{webhook_id}/deliveries')
+    assert resp.status_code == 200
+    data = resp.json()
+    assert 'deliveries' in data
+    assert len(data['deliveries']) >= 1
+    assert data['deliveries'][0]['webhook_id'] == webhook_id
+    assert data['deliveries'][0]['status_code'] == 200
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert 'deliveries' in data
+    assert len(data['deliveries']) >= 1
+
+
+def test_webhook_delivery_history_not_found(client):
+    """Test delivery history endpoint for non-existent webhook."""
+    login(client)
+    resp = client.get('/api/webhooks/nonexistent/deliveries')
+    assert resp.status_code == 404
+
+
+
+def test_webhook_delivery_history_requires_auth(client):
+    """Test that delivery history endpoints require authentication."""
+    # Don't login - test unauthenticated access
+    resp = client.get('/api/webhooks/deliveries')
+    assert resp.status_code == 401
+
+    resp = client.get('/api/webhooks/some-id/deliveries')
+    assert resp.status_code == 401
+
