@@ -73,6 +73,13 @@ class WebhookTestInput(BaseModel):
     batch: str
     category: str = 'default'
 
+
+class WebhookDeliveryQuery(BaseModel):
+    model_config = ConfigDict(extra='forbid', allow_inf_nan=False)
+    webhook_id: str | None = None
+    limit: int = Field(100, ge=1, le=500)
+    offset: int = Field(0, ge=0)
+
 def analytics(request: Request, batch: str | None) -> list[dict]:
     catalog = request.app.state.catalog
     if catalog.list(batch=batch, limit=1)['total'] > 5000:
@@ -263,6 +270,33 @@ def delete_webhook(request: Request, webhook_id: str):
     deleted = webhook_manager.delete_config(webhook_id)
     if not deleted:
         raise AppError(404, 'not_found', 'Webhook not found')
+
+@router.get('/webhooks/deliveries')
+def list_all_deliveries(request: Request,
+                         limit: int = Query(100, ge=1, le=500),
+                         offset: int = Query(0, ge=0)):
+    """Get delivery history for all webhooks."""
+    authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    deliveries = webhook_manager.list_deliveries(webhook_id=None, limit=limit, offset=offset)
+    return {'deliveries': deliveries, 'limit': limit, 'offset': offset}
+
+
+@router.get('/webhooks/{webhook_id}/deliveries')
+def get_webhook_deliveries(request: Request, webhook_id: str,
+                            limit: int = Query(100, ge=1, le=500),
+                            offset: int = Query(0, ge=0)):
+    """Get delivery history for a specific webhook."""
+    authorize(request, 'admin')
+    webhook_manager = request.app.state.webhook_manager
+    config = webhook_manager.get_config(webhook_id)
+    if not config:
+        raise AppError(404, 'not_found', 'Webhook not found')
+    deliveries = webhook_manager.list_deliveries(webhook_id=webhook_id, limit=limit, offset=offset)
+    return {'deliveries': deliveries, 'limit': limit, 'offset': offset}
+
+
+
 
 
 @router.post('/webhooks/{webhook_id}/test')
