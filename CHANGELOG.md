@@ -1,8 +1,15 @@
 # Changelog
 
+## 1.8.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.7.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+- Added "Suggest policy from labels" button to Policy tab in the frontend workspace
+- Calibration results display with suggested thresholds, training-set performance comparison (before/after F1), and per-threshold notes
+- Reviewers can trigger policy calibration from UI; administrators can apply suggested thresholds
 
 ## 1.6.0 — work-in-progress checkpoint
 
