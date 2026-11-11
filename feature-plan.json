@@ -5,12 +5,19 @@
     {
       "id": "continue-implementation",
       "title": "Continue implementation and resolve known failures",
-      "status": "in_progress",
+      "status": "done",
       "acceptance": [
-        "Run checks, fix failures, and implement the next planned feature"
+        "Run checks, fix failures, and implement the next planned feature",
+        "Add \"Apply suggested policy\" button for admins to directly apply calibrated thresholds",
+        "Add \"Dismiss\" button to clear calibration results"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "frontend/src/App.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_api.py",
+        "frontend/src/api.test.ts"
+      ]
     }
   ]
 }

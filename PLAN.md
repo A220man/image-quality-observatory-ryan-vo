@@ -10,8 +10,14 @@ continue-implementation
 
 ### continue-implementation — Continue implementation and resolve known failures
 
-Status: in_progress
+Status: done
 
 Acceptance:
 - Run checks, fix failures, and implement the next planned feature
+- Add "Apply suggested policy" button for admins to directly apply calibrated thresholds
+- Add "Dismiss" button to clear calibration results
+
+Implementation: `frontend/src/App.tsx`
+
+Tests: `backend/tests/test_api.py`, `frontend/src/api.test.ts`
 
