@@ -3,7 +3,7 @@
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
 
-Current version: `1.9.0`.
+Current version: `1.10.0`.
 
 A review workspace for computer-vision datasets. Measure blur, exposure and contrast; find recurring failure patterns; label examples; calibrate quality thresholds; and export filtering decisions. Image bytes are decoded in memory and are not retained. SQLite stores metrics, filenames, labels, sessions and audit history.
 
